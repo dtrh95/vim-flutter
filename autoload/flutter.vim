@@ -111,9 +111,9 @@ function! flutter#run(...) abort
     setlocal noswapfile
   endif
 
-  let cmd = g:flutter_command.' run'
+  let cmd = [&shell, &shellcmdflag, g:flutter_command, 'run']
   if !empty(a:000)
-    let cmd = cmd." ".join(a:000)
+    let cmd += a:000
     if g:flutter_use_last_run_option
       let g:flutter_last_run_option = a:000
     endif
@@ -128,7 +128,13 @@ function! flutter#run(...) abort
           \ 'on_stdout' : function('flutter#_on_output_nvim'),
           \ 'on_stderr' : function('flutter#_on_output_nvim'),
           \ 'on_exit' : function('flutter#_on_exit_nvim'),
+          \ 'exit_cb': function('flutter#_exit_cb')
           \ })
+
+    if job_status(g:flutter_job) == 'fail'
+      echo 'Starting job failed'
+      unlet g:flutter_job
+    endif
   elseif v:version >= 800
     let g:flutter_job = job_start(cmd, {
           \ 'out_io': 'buffer',
